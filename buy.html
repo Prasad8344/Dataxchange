@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buy Data | DataXchange</title>
+  <link rel="stylesheet" href="index.css" />
+</head>
+
+<body>
+  <header>
+    <div class="logo"> DataXchange</div>
+    <nav>
+        <a href="live.html">Live</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="sell.html">Sell</a>
+      <a href="profile.html"><img src="pro.png"></a>
+    </nav>
+  </header>
+
+  <section class="buy-section">
+    <h2>🛒 Available Data Offers</h2>
+    <div id="offersList" class="offers-container"></div>
+    <p id="buyMsg"></p>
+  </section>
+
+  <footer>
+    <p>© 2025 DataXchange | All Rights Reserved</p>
+  </footer>
+
+  <!-- 🔥 Firebase Integration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } 
+      from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+    import { 
+      getFirestore, 
+      collection, 
+      onSnapshot, 
+      deleteDoc, 
+      doc, 
+      query, 
+      where, 
+      getDocs, 
+      updateDoc 
+    } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    // 🔧 Your Firebase Config
+    const firebaseConfig = {
+  apiKey: "AIzaSyDwvyih8qY7GcOC67ubJiOxNbCYWIn4gno",
+  authDomain: "selling-data-bee9e.firebaseapp.com",
+  projectId: "selling-data-bee9e",
+  storageBucket: "selling-data-bee9e.firebasestorage.app",
+  messagingSenderId: "120561504017",
+  appId: "1:120561504017:web:261a3f6da557daedc486b0",
+  measurementId: "G-XFY2SNEBRL"
+};
+
+    // 🔥 Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const offersList = document.getElementById("offersList");
+    const buyMsg = document.getElementById("buyMsg");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // 🧠 Allow only logged-in users
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        loadOffers(); // Load offers when logged in
+      }
+    });
+
+    // 🧾 Load Offers in Real Time
+    function loadOffers() {
+      const offersRef = collection(db, "offers");
+      onSnapshot(offersRef, (snapshot) => {
+        offersList.innerHTML = ""; // Clear before adding
+
+        if (snapshot.empty) {
+          offersList.innerHTML = "<p>No offers available 😢</p>";
+          return;
+        }
+
+        snapshot.forEach((docSnap) => {
+          const offer = docSnap.data();
+          const id = docSnap.id;
+
+          const card = document.createElement("div");
+          card.classList.add("offer-card");
+
+          card.innerHTML = `
+            <h3>${offer.sellerName || "Unknown Seller"}</h3>
+            <p>📧 ${offer.sellerEmail}</p>
+            <p>📶 Data: ${offer.data} MB</p>
+            <p>💰 Price: ₹${offer.price} / 100MB</p>
+            <button class="buyBtn" data-id="${id}">Buy Now</button>
+          `;
+          offersList.appendChild(card);
+        });
+      });
+    }
+
+    // 🛍️ Handle Buy + Update Seller Wallet & Total Data Sold
+    offersList.addEventListener("click", async (e) => {
+      if (e.target.classList.contains("buyBtn")) {
+        const id = e.target.getAttribute("data-id");
+        const card = e.target.parentElement;
+
+        // Extract seller details
+        const sellerEmail = card.querySelector("p:nth-of-type(1)").textContent.replace("📧 ", "");
+        const dataText = card.querySelector("p:nth-of-type(2)").textContent;
+        const priceText = card.querySelector("p:nth-of-type(3)").textContent;
+
+        const dataAmount = parseFloat(dataText.match(/(\d+)/)[1]); // e.g. 500 MB → 500
+        const price = parseFloat(priceText.match(/₹(\d+)/)[1]);    // e.g. ₹20 → 20
+
+        try {
+          // 1️⃣ Find seller in users collection
+          const usersRef = collection(db, "users");
+          const q = query(usersRef, where("email", "==", sellerEmail));
+          const querySnapshot = await getDocs(q);
+
+          querySnapshot.forEach(async (userDoc) => {
+            const sellerData = userDoc.data();
+            const currentWallet = sellerData.wallet || 0;
+            const previousSold = sellerData.totalDataSold || 0;
+
+            const newWallet = currentWallet + price;
+            const newTotalSold = previousSold + dataAmount;
+
+            // 2️⃣ Update wallet + totalDataSold
+            await updateDoc(doc(db, "users", userDoc.id), {
+              wallet: newWallet,
+              totalDataSold: newTotalSold
+            });
+          });
+
+          // 3️⃣ Delete offer (simulate purchase)
+          await deleteDoc(doc(db, "offers", id));
+
+          buyMsg.textContent = `✅ Purchase successful! Seller credited ₹${price}`;
+          setTimeout(() => (buyMsg.textContent = ""), 3000);
+        } catch (err) {
+          buyMsg.textContent = "❌ " + err.message;
+        }
+      }
+    });
+
+    // 🚪 Logout
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      alert("You’ve been logged out!");
+      window.location.href = "login.html";
+    });
+  </script>
+</body>
+</html>

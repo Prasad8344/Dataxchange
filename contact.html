@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact | DataXchange</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#0b1e3b] text-white min-h-screen flex flex-col">
+  <!-- Navbar -->
+  <header class="bg-[#142a50] py-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center px-6">
+      <h1 class="text-xl font-bold text-blue-300">📶 DataXchange</h1>
+      <nav class="space-x-4">
+        <a href="dashboard.html" class="hover:text-blue-400">Dashboard</a>
+        <a href="sell.html" class="hover:text-blue-400">Sell</a>
+        <a href="buy.html" class="hover:text-blue-400">Buy</a>
+        <a href="about.html" class="hover:text-blue-400">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Section -->
+  <main class="flex-grow container mx-auto px-6 py-12">
+    <h2 class="text-3xl font-bold text-center text-blue-300 mb-8">Contact Us</h2>
+
+    <form id="contactForm" class="bg-[#142a50] max-w-md mx-auto p-8 rounded-2xl shadow-lg space-y-4">
+      <input id="name" type="text" placeholder="Your Name" required class="w-full p-3 rounded-md bg-[#1b345d] border-none text-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <input id="email" type="email" placeholder="Your Email" required class="w-full p-3 rounded-md bg-[#1b345d] border-none text-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <textarea id="message" rows="4" placeholder="Your Message..." required class="w-full p-3 rounded-md bg-[#1b345d] border-none text-white focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
+
+      <button type="submit" class="bg-blue-500 w-full py-3 rounded-md font-semibold hover:bg-blue-600 transition">
+        Send Message ✉️
+      </button>
+      <p id="msg" class="text-center mt-2 text-sm text-green-400"></p>
+    </form>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-[#142a50] text-center py-4 text-sm text-gray-400">
+    © 2025 DataXchange | Built with 💙 by Prasad
+  </footer>
+
+  <!-- Firebase Contact Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    // 🔧 Firebase Config
+   const firebaseConfig = {
+  apiKey: "AIzaSyDwvyih8qY7GcOC67ubJiOxNbCYWIn4gno",
+  authDomain: "selling-data-bee9e.firebaseapp.com",
+  projectId: "selling-data-bee9e",
+  storageBucket: "selling-data-bee9e.firebasestorage.app",
+  messagingSenderId: "120561504017",
+  appId: "1:120561504017:web:261a3f6da557daedc486b0",
+  measurementId: "G-XFY2SNEBRL"
+};
+
+    // 🔥 Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const contactForm = document.getElementById("contactForm");
+    const msg = document.getElementById("msg");
+
+    contactForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+      const message = document.getElementById("message").value;
+
+      try {
+        await addDoc(collection(db, "messages"), {
+          name,
+          email,
+          message,
+          time: serverTimestamp()
+        });
+
+        msg.textContent = "✅ Message sent successfully!";
+        contactForm.reset();
+
+        setTimeout(() => msg.textContent = "", 3000);
+      } catch (err) {
+        msg.textContent = "❌ " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

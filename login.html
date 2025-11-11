@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | DataXchange</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <header>
+    <div class="logo"> DataXchange</div>
+    <nav>
+      <a href="index.html">Home</a>
+    </nav>
+  </header>
+
+  <section class="form-section">
+    <div class="form-box">
+      <h2>Welcome Back 👋</h2>
+
+      <div class="tabs">
+        <button id="loginTab" class="active">Login</button>
+        <button id="registerTab">Register</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="Enter your email" required>
+        <input type="password" id="loginPassword" placeholder="Enter your password" required>
+        <button type="submit" class="btn">Login</button>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="registerForm" style="display:block;">
+        <input type="text" id="regName" placeholder="Enter your name" required>
+        <input type="email" id="regEmail" placeholder="Enter your email" required>
+        <input type="password" id="regPassword" placeholder="Create a password" required>
+        <button type="submit" class="btn">Register</button>
+      </form>
+
+      <p id="msg"></p>
+    </div>
+  </section>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import { 
+    getAuth, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    updateProfile 
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+  import { 
+    getFirestore, 
+    setDoc, 
+    doc 
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  // 🔧 Firebase Config
+  const firebaseConfig = {
+  apiKey: "AIzaSyDwvyih8qY7GcOC67ubJiOxNbCYWIn4gno",
+  authDomain: "selling-data-bee9e.firebaseapp.com",
+  projectId: "selling-data-bee9e",
+  storageBucket: "selling-data-bee9e.firebasestorage.app",
+  messagingSenderId: "120561504017",
+  appId: "1:120561504017:web:261a3f6da557daedc486b0",
+  measurementId: "G-XFY2SNEBRL"
+};
+
+  // 🔥 Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const registerForm = document.getElementById("registerForm");
+  const loginForm = document.getElementById("loginForm");
+  const msg = document.getElementById("msg");
+
+  // 🚀 REGISTER USER + CREATE WALLET
+  registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("regName").value;
+    const email = document.getElementById("regEmail").value;
+    const password = document.getElementById("regPassword").value;
+
+    try {
+      // 1️⃣ Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      // 2️⃣ Set display name in Auth
+      await updateProfile(auth.currentUser, { displayName: name });
+
+      // 3️⃣ Create Firestore wallet entry
+      await setDoc(doc(db, "users", auth.currentUser.uid), {
+        name: name,
+        email: email,
+        wallet: 0
+      });
+
+      msg.textContent = `✅ Welcome, ${name}! Wallet created with ₹0 balance.`;
+      setTimeout(() => (window.location.href = "dashboard.html"), 1500);
+    } catch (error) {
+      msg.textContent = "❌ " + error.message;
+    }
+  });
+
+  // 🚪 LOGIN
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      msg.textContent = "✅ Login successful!";
+      setTimeout(() => (window.location.href = "dashboard.html"), 1000);
+    } catch (error) {
+      msg.textContent = "❌ " + error.message;
+    }
+  });
+</script>
+
+  <script src="js/script.js"></script>
+</body>
+</html>

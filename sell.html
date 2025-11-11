@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sell Data | DataXchange</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <header>
+    <div class="logo"> DataXchange</div>
+    <nav>
+      <a href="live.html">Live</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profile.html"><img src="pro.png"></a>
+    </nav>
+  </header>
+
+  <section class="form-section">
+    <div class="form-box">
+      <h2>💸 Sell Your Data</h2>
+      <p>Enter details below to post your offer</p>
+
+      <form id="sellForm">
+        <input type="number" id="dataAmount" placeholder="Enter data to sell (in MB)" required>
+        <input type="number" id="dataPrice" placeholder="Price per 100MB (₹)" required>
+        <button type="submit" class="btn">Post Offer</button>
+      </form>
+
+      <p id="sellMsg"></p>
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2025 DataXchange | All Rights Reserved</p>
+  </footer>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } 
+    from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } 
+    from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  // 🔧 Your Firebase Config
+     const firebaseConfig = {
+  apiKey: "AIzaSyDwvyih8qY7GcOC67ubJiOxNbCYWIn4gno",
+  authDomain: "selling-data-bee9e.firebaseapp.com",
+  projectId: "selling-data-bee9e",
+  storageBucket: "selling-data-bee9e.firebasestorage.app",
+  messagingSenderId: "120561504017",
+  appId: "1:120561504017:web:261a3f6da557daedc486b0",
+  measurementId: "G-XFY2SNEBRL"
+};
+  // 🔥 Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Elements
+  const sellForm = document.getElementById("sellForm");
+  const sellMsg  = document.getElementById("sellMsg");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  // 🧠 Allow only logged-in users
+  onAuthStateChanged(auth, (user) => {
+    if (!user) window.location.href = "login.html";
+  });
+
+  // 💸 Add offer to Firestore
+  sellForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const dataAmount = document.getElementById("dataAmount").value.trim();
+    const dataPrice  = document.getElementById("dataPrice").value.trim();
+    const user = auth.currentUser;
+
+    if (!dataAmount || !dataPrice) {
+      sellMsg.textContent = "⚠️ Please enter valid data & price!";
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "offers"), {
+        sellerName: user.displayName || "Unknown",
+        sellerEmail: user.email,
+        data: dataAmount,
+        price: dataPrice,
+        createdAt: serverTimestamp()
+      });
+
+      sellMsg.textContent = "✅ Offer posted successfully!";
+      sellForm.reset();
+    } catch (err) {
+      sellMsg.textContent = "❌ " + err.message;
+    }
+  });
+
+  // 🚪 Logout
+  logoutBtn.addEventListener("click", async () => {
+    await signOut(auth);
+    alert("You have been logged out!");
+    window.location.href = "login.html";
+  });
+</script>
+
+
+  <script src="js/script.js" defer></script>
+</body>
+</html>

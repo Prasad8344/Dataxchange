@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Offers | DataXchange</title>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <header>
+    <div class="logo"> DataXchange</div>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="sell.html">Sell</a>
+      <a href="buy.html">Buy</a>
+      <a href="profile.html">Profile</a>
+    </nav>
+  </header>
+
+  <section class="buy-section">
+    <h2>📊 My Posted Offers</h2>
+    <div id="myOffersList" class="offers-container"></div>
+    <p id="msg"></p>
+  </section>
+
+  <footer>
+    <p>© 2025 DataXchange | All Rights Reserved</p>
+  </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } 
+    from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, deleteDoc, doc, query, where } 
+    from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    // 🔧 Firebase Config
+  const firebaseConfig = {
+  apiKey: "AIzaSyDwvyih8qY7GcOC67ubJiOxNbCYWIn4gno",
+  authDomain: "selling-data-bee9e.firebaseapp.com",
+  projectId: "selling-data-bee9e",
+  storageBucket: "selling-data-bee9e.firebasestorage.app",
+  messagingSenderId: "120561504017",
+  appId: "1:120561504017:web:261a3f6da557daedc486b0",
+  measurementId: "G-XFY2SNEBRL"
+};
+
+    // 🔥 Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const myOffersList = document.getElementById("myOffersList");
+    const msg = document.getElementById("msg");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // 🧠 Load only current user's offers
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        const q = query(collection(db, "offers"), where("sellerEmail", "==", user.email));
+        onSnapshot(q, (snapshot) => {
+          myOffersList.innerHTML = "";
+
+          if (snapshot.empty) {
+            myOffersList.innerHTML = "<p>No offers yet 😅</p>";
+            return;
+          }
+
+          snapshot.forEach((docSnap) => {
+            const offer = docSnap.data();
+            const id = docSnap.id;
+
+            const card = document.createElement("div");
+            card.classList.add("offer-card");
+
+            card.innerHTML = `
+              <h3>${offer.sellerName}</h3>
+              <p>📶 Data: ${offer.data} MB</p>
+              <p>💰 Price: ₹${offer.price} / 100MB</p>
+              <button class="deleteBtn" data-id="${id}">🗑️ Delete</button>
+            `;
+            myOffersList.appendChild(card);
+          });
+        });
+      }
+    });
+
+    // 🗑️ Delete Offer
+    myOffersList.addEventListener("click", async (e) => {
+      if (e.target.classList.contains("deleteBtn")) {
+        const id = e.target.getAttribute("data-id");
+        if (confirm("Delete this offer?")) {
+          await deleteDoc(doc(db, "offers", id));
+          msg.textContent = "✅ Offer deleted!";
+          setTimeout(() => (msg.textContent = ""), 2000);
+        }
+      }
+    });
+
+    // 🚪 Logout
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      alert("You’ve been logged out!");
+      window.location.href = "login.html";
+    });
+  </script>
+</body>
+</html>

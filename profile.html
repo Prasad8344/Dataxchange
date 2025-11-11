@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile | DataXchange</title>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <header>
+    <div class="logo">DataXchange</div>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="myoffers.html">My Offers</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+<section class="profile-section">
+  <div class="profile-box">
+    <h2>👤 Your Profile</h2>
+    <p><strong>Name:</strong> <span id="pName"></span></p>
+    <p><strong>Email:</strong> <span id="pEmail"></span></p>
+    <p><strong>Wallet Balance:</strong> <span id="pWallet">₹0</span></p>
+
+    <hr />
+    <input type="text" id="newName" placeholder="Enter new name" />
+    <button id="saveNameBtn" class="btn">Save Name</button>
+    <button id="logoutBtn2" class="btn danger">Logout</button>
+  </div>
+</section>
+  <footer>
+    <p>© 2025 DataXchange | All Rights Reserved</p>
+  </footer>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } 
+    from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc } 
+    from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  // 🔧 Firebase Config
+ const firebaseConfig = {
+  apiKey: "AIzaSyDwvyih8qY7GcOC67ubJiOxNbCYWIn4gno",
+  authDomain: "selling-data-bee9e.firebaseapp.com",
+  projectId: "selling-data-bee9e",
+  storageBucket: "selling-data-bee9e.firebasestorage.app",
+  messagingSenderId: "120561504017",
+  appId: "1:120561504017:web:261a3f6da557daedc486b0",
+  measurementId: "G-XFY2SNEBRL"
+};
+
+
+  // 🔥 Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const pName = document.getElementById("pName");
+  const pEmail = document.getElementById("pEmail");
+  const pWallet = document.getElementById("pWallet");
+  const logoutBtn = document.getElementById("logoutBtn2");
+
+  // 🧠 Fetch user data from Firestore
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const userRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(userRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        pName.textContent = data.name;
+        pEmail.textContent = data.email;
+        pWallet.textContent = "₹ " + (data.wallet || 0);
+      } else {
+        pName.textContent = user.displayName || "N/A";
+        pEmail.textContent = user.email;
+        pWallet.textContent = "₹ 0";
+      }
+    } else {
+      window.location.href = "login.html";
+    }
+  });
+
+  // 🚪 Logout
+  logoutBtn.addEventListener("click", async () => {
+    await signOut(auth);
+    alert("You’ve been logged out!");
+    window.location.href = "login.html";
+  });
+</script>
+
+ 
+
+</body>
+</html>

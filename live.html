@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Dashboard | DataXchange</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#0b1e3b] text-white flex items-center justify-center min-h-screen">
+  <div id="card" class="bg-[#142a50] p-6 rounded-2xl shadow-2xl w-96 text-center space-y-5">
+    <h2 class="text-2xl font-semibold flex items-center justify-center gap-2">
+      📡 Live Data Selling
+    </h2>
+
+    <div class="text-sm opacity-70" id="sessionId">Session #A1B2 • LIVE</div>
+
+    <div>
+      <p id="dataSold" class="text-3xl font-bold">0 MB</p>
+      <p class="text-blue-300 text-sm">Data Sold</p>
+    </div>
+
+    <div>
+      <p id="earnings" class="text-3xl font-bold">₹ 0</p>
+      <p class="text-blue-300 text-sm">Earnings</p>
+    </div>
+
+    <div class="mt-3">
+      <div class="w-full bg-gray-700 rounded-full h-3 mt-2">
+        <div id="progressBar" class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width:0%"></div>
+      </div>
+      <p id="progressText" class="text-sm mt-2 opacity-80">Progress 0%</p>
+    </div>
+
+    <div class="text-sm flex justify-between mt-2 opacity-70">
+      <p>⏱ <span id="elapsed">00:00</span> elapsed</p>
+      <p>ETA <span id="eta">--:--</span></p>
+    </div>
+
+    <div class="flex flex-wrap gap-2 justify-center mt-4">
+      <button id="startBtn" class="bg-blue-500 px-4 py-2 rounded-lg">▶ Start</button>
+      <button id="pauseBtn" class="bg-yellow-500 px-4 py-2 rounded-lg">⏸ Pause</button>
+      <button id="stopBtn" class="bg-red-600 px-4 py-2 rounded-lg">⏹ Stop & Withdraw</button>
+      <button id="resetBtn" class="bg-gray-600 px-4 py-2 rounded-lg">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- 🔥 Firebase Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } 
+      from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc, onSnapshot } 
+      from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    // 🔧 Firebase Config
+     const firebaseConfig = {
+  apiKey: "AIzaSyDwvyih8qY7GcOC67ubJiOxNbCYWIn4gno",
+  authDomain: "selling-data-bee9e.firebaseapp.com",
+  projectId: "selling-data-bee9e",
+  storageBucket: "selling-data-bee9e.firebasestorage.app",
+  messagingSenderId: "120561504017",
+  appId: "1:120561504017:web:261a3f6da557daedc486b0",
+  measurementId: "G-XFY2SNEBRL"
+};
+
+    // 🔥 Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // 🎛️ UI Elements
+    const dataEl = document.getElementById("dataSold");
+    const earnEl = document.getElementById("earnings");
+    const progressBar = document.getElementById("progressBar");
+    const progressText = document.getElementById("progressText");
+    const elapsedEl = document.getElementById("elapsed");
+    const etaEl = document.getElementById("eta");
+
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    // 🧠 Variables
+    let startTime, timer, selling = false;
+    const target = 500; // MB target
+
+    // 🧩 Convert seconds → mm:ss
+    const formatTime = (s) => {
+      const m = Math.floor(s / 60).toString().padStart(2, "0");
+      const sec = (s % 60).toString().padStart(2, "0");
+      return `${m}:${sec}`;
+    };
+
+    // 🔥 Watch Firebase live
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      const userRef = doc(db, "users", user.uid);
+      onSnapshot(userRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          const sold = userData.totalDataSold || 0;
+          const earnings = userData.wallet || 0;
+          const progress = Math.min((sold / target) * 100, 100);
+
+          dataEl.textContent = sold.toFixed(1) + " MB";
+          earnEl.textContent = "₹ " + earnings;
+          progressBar.style.width = progress + "%";
+          progressText.textContent = "Progress " + progress.toFixed(1) + "%";
+        }
+      });
+    });
+
+    // ▶ Start Session (timer only)
+    startBtn.addEventListener("click", () => {
+      if (selling) return;
+      selling = true;
+      startTime = Date.now();
+      timer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        elapsedEl.textContent = formatTime(elapsed);
+        const remaining = Math.max(0, 600 - elapsed); // sample ETA 10min
+        etaEl.textContent = formatTime(remaining);
+      }, 1000);
+    });
+
+    // ⏸ Pause
+    pauseBtn.addEventListener("click", () => {
+      selling = false;
+      clearInterval(timer);
+    });
+
+    // ⏹ Stop & Withdraw
+    stopBtn.addEventListener("click", async () => {
+      selling = false;
+      clearInterval(timer);
+      alert("💰 Session stopped! Check your wallet for updated earnings.");
+    });
+
+    // ↺ Reset
+    resetBtn.addEventListener("click", async () => {
+      selling = false;
+      clearInterval(timer);
+      elapsedEl.textContent = "00:00";
+      etaEl.textContent = "--:--";
+      dataEl.textContent = "0 MB";
+      earnEl.textContent = "₹ 0";
+      progressBar.style.width = "0%";
+      progressText.textContent = "Progress 0%";
+    });
+  </script>
+</body>
+</html>
